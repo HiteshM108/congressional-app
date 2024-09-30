@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "798027375262",
+    "project_id": "nutritrack-e19cd",
+    "storage_bucket": "nutritrack-e19cd.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:798027375262:android:3760e0cc3ac8c59c7bd18f",
+        "android_client_info": {
+          "package_name": "com.example.flutter_test_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCh4NJDWo0dH88lRNh6kYm8lpn8WqGAvZ8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
