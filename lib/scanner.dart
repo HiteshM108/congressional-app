@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_test_app/result_screen.dart';
+import 'package:Nutritrack/result_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
@@ -102,7 +102,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                         child: Center(
                           child: ElevatedButton(
                             onPressed: _scanImage,
-                            child: Text('Scan Text'),
+                            child: const Text('Scan Text'),
                           ),
                         ),
                       )

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-void main() => runApp(MaterialApp(
+void main() => runApp(const MaterialApp(
   home: StartScreen(),
 ));
 
@@ -18,22 +18,22 @@ class StartScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text("Welcome to"),
-                    SizedBox(width: 10.0),
+                    const Text("Welcome to"),
+                    const SizedBox(width: 10.0),
                     Container(
-                      child: Text("NutriTrack"),
-                      padding: EdgeInsets.symmetric(horizontal: 30.0, vertical: 10.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 10.0),
                       decoration: BoxDecoration(
                           color: Colors.amber,
                           borderRadius: BorderRadius.circular(5)
                       ),
+                      child: const Text("NutriTrack"),
                     )
                   ],
                 ),
-                SizedBox(height: 25.0),
+                const SizedBox(height: 25.0),
                 ElevatedButton(
                   onPressed: () {},
-                  child: Text("Get Started"),
+                  child: const Text("Get Started"),
 
                 )
               ],

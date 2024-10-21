@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_test_app/models/user.dart';
-import 'package:flutter_test_app/screens/authenticate/authenticate.dart';
-import 'package:flutter_test_app/screens/authenticate/userSetup.dart';
-import 'package:flutter_test_app/screens/home/home.dart';
-import 'package:flutter_test_app/services/auth.dart';
-import 'package:provider/provider.dart';
+import 'package:Nutritrack/screens/authenticate/authenticate.dart';
+import 'package:Nutritrack/screens/authenticate/userSetup.dart';
+import 'package:Nutritrack/screens/home/home.dart';
+import 'package:Nutritrack/services/auth.dart';
 
 // class Wrapper extends StatelessWidget {
 //   const Wrapper({super.key});
@@ -44,10 +42,10 @@ class _WrapperState extends State<Wrapper> {
           print("CHECKING LOGIN STATUS");
           if (snapshot.data?.name == "null") {
             print("Register Page");
-            return UserInfoSetup();
+            return const UserInfoSetup();
           } else if (snapshot.hasData) {
             print("Home Page");
-            return Home();
+            return const Home();
           } else {
             print("Auth Page");
             return const Authenticate();

@@ -1,4 +1,4 @@
-# flutter_test_app
+# Nutritrack
 
 An app to test out Flutter.
 

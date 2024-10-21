@@ -1,13 +1,13 @@
 // import 'dart:js_interop';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_test_app/services/auth.dart';
-import 'package:flutter_test_app/shared/constants.dart';
+import 'package:Nutritrack/services/auth.dart';
+import 'package:Nutritrack/shared/constants.dart';
 
 class Register extends StatefulWidget {
 
   final Function toggleView;
-  Register({ required this.toggleView });
+  const Register({super.key,  required this.toggleView });
 
   @override
   State<Register> createState() => _RegisterState();
@@ -34,25 +34,25 @@ class _RegisterState extends State<Register> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text("Welcome to"),
-                    SizedBox(width: 10.0),
+                    const Text("Welcome to"),
+                    const SizedBox(width: 10.0),
                     Container(
-                      child: Text("NutriTrack"),
-                      padding: EdgeInsets.symmetric(horizontal: 30.0, vertical: 10.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 10.0),
                       decoration: BoxDecoration(
                           color: Colors.amber,
                           borderRadius: BorderRadius.circular(5)
                       ),
+                      child: const Text("NutriTrack"),
                     )
                   ],
                 ),
                 Container(
-                    padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 50.0),
+                    padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 50.0),
                     child: Form(
                       key: _formKey,
                       child: Column(
                         children: <Widget>[
-                          SizedBox(height: 20.0),
+                          const SizedBox(height: 20.0),
                           TextFormField(
                             decoration: textInputDecoration.copyWith(hintText: "Email"),
                             validator: (val) {
@@ -65,7 +65,7 @@ class _RegisterState extends State<Register> {
                               setState(() => email = val);
                             },
                           ),
-                          SizedBox(height: 20.0),
+                          const SizedBox(height: 20.0),
                           TextFormField(
                             decoration: textInputDecoration.copyWith(hintText: "Password"),
                             validator: (val) {
@@ -79,10 +79,10 @@ class _RegisterState extends State<Register> {
                               setState(() => password = val);
                             },
                           ),
-                          SizedBox(height: 20.0),
+                          const SizedBox(height: 20.0),
                           OutlinedButton(
                             style: ButtonStyle(
-                              foregroundColor: WidgetStateProperty.all<Color>(Colors.deepPurple),
+                              foregroundColor: WidgetStateProperty.all<Color>(Colors.green),
                               overlayColor: WidgetStateProperty.all<Color>(Colors.amber),
                             ),
                             onPressed: () async {
@@ -93,27 +93,27 @@ class _RegisterState extends State<Register> {
                                 }
                               }
                             },
-                            child: Text("Register"),
+                            child: const Text("Register"),
                           ),
-                          SizedBox(height: 12.0),
+                          const SizedBox(height: 12.0),
                           Text(
                             registrationError,
-                            style: TextStyle(color: Colors.red, fontSize: 14.0),
+                            style: const TextStyle(color: Colors.red, fontSize: 14.0),
                           ),
-                          SizedBox(height: 20.0),
-                          Text("Already have an account?"),
-                          SizedBox(height: 5.0),
+                          const SizedBox(height: 20.0),
+                          const Text("Already have an account?"),
+                          const SizedBox(height: 5.0),
                           OutlinedButton(
-                              child: Text("Sign In!"),
                               style: ButtonStyle(
-                                foregroundColor: WidgetStateProperty.all<Color>(Colors.deepPurple),
+                                foregroundColor: WidgetStateProperty.all<Color>(Colors.green),
                                 overlayColor: WidgetStateProperty.all<Color>(Colors.amber),
                               ),
                               onPressed: () {
                                 Future.delayed(const Duration(milliseconds: 300), () {
                                   widget.toggleView();
                                 });
-                              }
+                              },
+                              child: const Text("Sign In!")
                           ),
                         ],
                       ),
