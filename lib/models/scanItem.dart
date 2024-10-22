@@ -6,3 +6,10 @@ class ScanItem {
   ScanItem({required this.imageRequest, required this.itemName, required this.description, required this.feedback, required this.nutriScore, required this.ingredients, required this.nutrients});
 
 }
+
+
+class ScanHistory {
+  final List<Map<String, dynamic>> scanHistory;
+
+  ScanHistory({required this.scanHistory});
+}

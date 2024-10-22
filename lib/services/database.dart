@@ -1,6 +1,11 @@
+import 'dart:async';
+
+import 'package:Nutritrack/models/foodImage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Nutritrack/models/scanItem.dart';
 import 'package:Nutritrack/models/user.dart';
+import 'package:Nutritrack/screens/home/scanned_history.dart';
+import 'package:Nutritrack/screens/home/food_history.dart';
 
 class DatabaseService {
 
@@ -11,6 +16,8 @@ class DatabaseService {
   final CollectionReference userDataCollection = FirebaseFirestore.instance.collection("user-data");
   final CollectionReference userScanCollection = FirebaseFirestore.instance.collection("user-scans");
   final CollectionReference userImageCollection = FirebaseFirestore.instance.collection("user-images");
+
+  final StreamController<int> _controller = StreamController<int>();
 
   Future updateUserData(String name, int age, int weight, int height, String gender, String activityLevel) async {
     return await userDataCollection.doc(uid).set({
@@ -40,7 +47,7 @@ class DatabaseService {
     }, SetOptions(merge: true)).onError((e, _) => print("ERROR WRITING TO DOC: $e"));
   }
 
-  Future updateUserImages(String imageRequest, String itemName, String nutriScore, List<String> nutrients) async {
+  Future updateUserImages(String imageRequest, String itemName, String nutriScore, List<String> nutrients, String feedback) async {
 
     String image = await nextImageNumber();
 
@@ -49,7 +56,8 @@ class DatabaseService {
         "image-request" : imageRequest,
         "name" : itemName,
         "nutriScore" : nutriScore,
-        "nutrients" : nutrients
+        "nutrients" : nutrients,
+        "feedback" : feedback,
       }
     }, SetOptions(merge: true)).onError((e, _) => print("ERROR WRITING TO DOC: $e"));
   }
@@ -83,19 +91,52 @@ class DatabaseService {
         .map(_userDataFromSnapshot);
   }
 
+  Stream<ScanHistory> getScanData() {
+    return userScanCollection.doc(uid).snapshots()
+        .map(_userScanFromSnapshot);
+  }
+
+  Stream<FoodImageHistory> getFoodData(){
+    return userImageCollection.doc(uid).snapshots()
+        .map(_userFoodFromSnapshot);
+  }
+
   UserModel _userDataFromSnapshot(DocumentSnapshot snapshot) {
     return UserModel(uid: uid, name: snapshot.get("name"), age: snapshot.get("age"), height: snapshot.get("weight"), weight: snapshot.get("height"), gender: snapshot.get("gender"), activityLevel: snapshot.get("activity-level"));
   }
 
-  void getScanData() {
-    var data = userScanCollection.doc(uid).snapshots().elementAt(0);
-    data.then((value) {
-      print(value["image-request"]);
-    });
+  FoodImageHistory _userFoodFromSnapshot(DocumentSnapshot snapshot) {
+    Map<String, dynamic>? data = snapshot.data() as Map<String, dynamic>?;
+    if (data != null) {
+
+      List<Map<String, dynamic>> foodImage = [];
+
+      data.forEach((key, value) {
+        if (key.startsWith("scan-")) {
+          foodImage.add(value as Map<String, dynamic>);
+        }
+      });
+      return FoodImageHistory(foodHistory: foodImage);
+    } else {
+      return FoodImageHistory(foodHistory: []);
+    }
   }
 
-  ScanItem _userScanFromSnapshot(DocumentSnapshot snapshot) {
-    return ScanItem(imageRequest: snapshot.get("image-request"), itemName: snapshot.get("item-name"), description: snapshot.get("description"), feedback: snapshot.get("feedback"), nutriScore: snapshot.get("nutriScore"), ingredients: snapshot.get("ingredients"), nutrients: snapshot.get("nutrients"));
+  ScanHistory _userScanFromSnapshot(DocumentSnapshot snapshot) {
+    Map<String, dynamic>? data = snapshot.data() as Map<String, dynamic>?;
+    if (data != null) {
+
+      List<Map<String, dynamic>> scanItems = [];
+
+      data.forEach((key, value) {
+        if (key.startsWith("scan-")) {
+          scanItems.add(value as Map<String, dynamic>);
+        }
+      });
+      return ScanHistory(scanHistory: scanItems);
+    } else {
+      return ScanHistory(scanHistory: []);
+    }
   }
 
   // Future<UserModel> getUserData(String uid) async {

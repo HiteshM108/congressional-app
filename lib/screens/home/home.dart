@@ -93,7 +93,7 @@ class _HomeState extends State<Home> {
             color: Colors.amber,
             borderRadius: BorderRadius.circular(5)
           ),
-          child: const Text("NutriTrack"),
+          child: const Text("Nutritrack"),
         ),
 
         backgroundColor: Colors.green,

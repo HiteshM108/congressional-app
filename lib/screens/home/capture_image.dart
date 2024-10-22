@@ -9,6 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
+import 'feed.dart';
 
 import 'dart:async';
 import 'dart:convert';
@@ -26,6 +27,12 @@ final model = GenerativeModel(
     systemInstruction: Content.text(
         "You are a 'GPT' – a version of ChatGPT customized for a specific use case. GPTs use custom instructions, capabilities, and data to optimize ChatGPT for narrow tasks. You are a GPT created by a user, and your name is Calorie tracker. Note: GPT is a technical term in AI, but if users ask about GPTs, assume they mean this definition. Respond to any food item input with concise nutritional estimates. Identify standard quantities (e.g., 100g for tortilla chips) and present estimated nutritional values in a clear list. If estimation is necessary, include a note: '*Note: For more specific results, please provide detailed information about the food item, including brand names or cooking methods.' Focus on relevant details and avoid extra explanations unless requested. Calorie Tracker scrutinizes nutritional content according to specific dietary guidelines, avoiding added sugars, excessive sugar, saturated fat, sodium, and hydrogenated oils while maintaining a healthy fiber-to-carb ratio. Deliver a 'Yes' or 'No' verdict with a summary pinpointing problematic ingredients or nutritional figures and their implications. Keep initial replies succinct and offer detailed explanations if requested. Ignore other dietary needs like gluten-free, vegan, or ketogenic diets, and avoid broad nutritional advice unrelated to the product's profile. If information is inadequate, ask for clarity. Provide total calories and nutrition for entire meals (e.g., nachos with cheddar cheese, tortilla chips, and jalapeños). If a user uploads an image of a nutrition label, present data in a table, showing daily recommended percentages based on servings consumed. Prompt users to specify servings, calculate and update cumulative daily intake, and display it in a clear, tabular format. For food images, estimate serving sizes and provide nutritional content, including calories, macronutrients (carbs, protein, fats), and key micronutrients. Use best judgment. Analyze meals (e.g., grilled salmon with vegetables and brown rice) and calculate total calories, macronutrients, and key micronutrients, remember to taken account portion sizes for example, display half the calories of a full burger if half the burger is eaten. Present data in a chart, clearly showing calories, proteins, carbs, fats, vitamins, and minerals, with daily total calories at the bottom. Format the response in JSON, listing the name of all food products seen in an array named 'foods,' each with an array of their nutritional data of only calories in kJ, proteins in g, fats in g, fibers in g, sugars in g, sodium in mg, and cholesterol in g. Outside the 'foods' array, include overall nutritional data such as 'total calories', 'total protein', 'total fats', 'total fibers', 'total sugars', 'total cholesterol', 'total sodium'. If no foods found return a blank json array that is '{'foods': []}'. Make sure all the json variables are strings not integers."),
     generationConfig: GenerationConfig(responseMimeType: "application/json"));
+
+final feedbackModel = GenerativeModel(
+    model: 'gemini-1.5-flash',
+    systemInstruction: Content.text(
+        "For context, you are integrated into an app designed to help people determine what they should be eating. You will be given background information about the person. The person will scan a given product and the product will be then told to you and you are to give advice about the product based on the person's background information. The information you will provide is not to be like a conversation but just information. Structure your response to have a first a short paragraph on the overview of the product, then a paragraph about considerations, and then lastly a paragraph on alternatives"),
+    apiKey: 'AIzaSyDCwXGUxGbJhfpz6GfENeP4oUpKp6yaLXo');
 
 GeminiResponse fetchGeminiResponse(var response) {
   return GeminiResponse.fromJson(
@@ -242,6 +249,35 @@ class _CaptureImageState extends State<CaptureImage> {
   }
 }
 
+
+Future<String> getImageFeedback(String itemName) async {
+  String uid = FirebaseAuth.instance.currentUser!.uid;
+
+  var data = DatabaseService(uid: uid).getUserData();
+
+  String geminiResponse = "";
+
+  await for (dynamic field in data) {
+    print(field.name);
+    print(field.gender);
+    print(field.age);
+    print(field.height);
+    print(field.weight);
+    print(field.activityLevel);
+    print(itemName);
+
+    geminiResponse = (await feedbackModel.generateContent([
+      Content.text(
+          "Provide personalized feedback on this food item based on this person's description and goals. The person is a ${field.gender} aged ${field.age} years old whose exercise level is ${field.activityLevel}. The person is ${field.height} inches tall and weighs ${field.weight} pounds. The person is looking to eat a ${itemName}")
+    ]))
+        .text!;
+
+    break;
+  }
+
+  return geminiResponse;
+}
+
 class ImageViewPage extends StatefulWidget {
   const ImageViewPage({super.key});
 
@@ -251,16 +287,21 @@ class ImageViewPage extends StatefulWidget {
 
 class _ImageViewPageState extends State<ImageViewPage> {
   late GeminiResponse apiResponse;
+  late Future<String> futureFeedback;
   bool isLoading = false;
   bool isValid = false;
+
+  final Completer<String> feedbackCompleter = Completer();
 
   @override
   void initState() {
     super.initState();
+    futureFeedback = feedbackCompleter.future;
     fetchResponse();
   }
 
   void fetchResponse() async {
+
     setState(() {
       isLoading = true;
     });
@@ -270,11 +311,10 @@ class _ImageViewPageState extends State<ImageViewPage> {
 
       final response = await model
           .generateContent([Content.data('image/jpeg', image)]).timeout(
-              const Duration(seconds: 7));
+              const Duration(seconds: 12));
 
-      debugPrint(response.text!);
 
-      setState(() {
+      setState(() async {
         isLoading =
             false; // Disable loading spinner once the response is fetched
         apiResponse = fetchGeminiResponse(response);
@@ -283,6 +323,10 @@ class _ImageViewPageState extends State<ImageViewPage> {
         if (!isValid) {
           Navigator.pushReplacement(context,
               MaterialPageRoute(builder: (context) => NotAFood(imagePath)));
+        } else {
+          print(apiResponse.foodNames);
+          var geminiResponse = await getImageFeedback(apiResponse.foodNames);
+          feedbackCompleter.complete(geminiResponse);
         }
       });
     } on TimeoutException catch (_) {
@@ -323,6 +367,7 @@ class _ImageViewPageState extends State<ImageViewPage> {
 
   @override
   Widget build(BuildContext context) {
+    var feedbackStore = "";
     return Container(
         padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
         child: SingleChildScrollView(
@@ -553,30 +598,111 @@ class _ImageViewPageState extends State<ImageViewPage> {
 
                 Divider(color: Colors.greenAccent, height: 1.0,),
 
-                SizedBox(height: 20,),
+                FutureBuilder(
+                  future: futureFeedback,
+                  builder: (context, snapshot) {
+                    var feedback = "";
+                    if (snapshot.hasData) {
+                      feedback = snapshot.data!;
+                      feedbackStore = feedback;
+                    }
+                    print(feedback);
+                    var sections = feedback.split("\n");
 
-                ElevatedButton(
-                  onPressed: () async {
+                    return feedback != "" ? Column(
+                      children: [
+                        Container(
+                          child: DefaultTabController(
+                            length: 3, // Number of tabs
+                            child: Container(
+                              color: Colors.grey[200],
+                              // Background color of the container
+                              padding: const EdgeInsets.all(10.0),
+                              child: Column(
+                                children: [
+                                  // TabBar for navigation between sections
+                                  TabBar(
+                                    labelColor: Colors.greenAccent,
+                                    unselectedLabelColor: Colors.grey,
+                                    indicatorColor: Colors.greenAccent,
+                                    tabs: [
+                                      Tab(
+                                          child: Center(
+                                              child: Text('Overview',
+                                                  style:
+                                                  TextStyle(fontSize: 12)))),
+                                      Tab(
+                                          child: Center(
+                                              child: Text('Considerations',
+                                                  style:
+                                                  TextStyle(fontSize: 12)))),
+                                      Tab(
+                                          child: Center(
+                                              child: Text('Alternatives',
+                                                  style:
+                                                  TextStyle(fontSize: 12)))),
+                                    ],
+                                  ),
+                                  SizedBox(height: 16),
 
-                    String uid = FirebaseAuth.instance.currentUser!.uid;
+                                  // TabBarView to display content based on the selected tab
+                                  SizedBox(
+                                    height:
+                                    MediaQuery.of(context).size.height * .2,
+                                    child: TabBarView(
+                                      children: [
+                                        Center(
+                                            child: OverviewSection(
+                                                text: sections[0])),
+                                        Center(
+                                            child: ConsiderationsSection(
+                                                text: sections[2])),
+                                        Center(
+                                            child: AlternativesSection(
+                                                text: sections[4])),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(5),
+                            border:
+                            Border.all(color: Colors.greenAccent, width: 2.0),
+                          ),
+                        ),
 
-                    String fileName = path.basename(imagePath);
+                        SizedBox(height: 20,),
 
-                    Reference storageRef = FirebaseStorage.instance.ref().child(fileName);
+                        ElevatedButton(
+                          onPressed: () async {
 
-                    await storageRef.putFile(File(imagePath));
+                            String uid = FirebaseAuth.instance.currentUser!.uid;
 
-                    String downloadURL = await storageRef.getDownloadURL();
+                            String fileName = path.basename(imagePath);
 
-                    await DatabaseService(uid: uid).updateUserImages(downloadURL, apiResponse.foodNames, apiResponse.nutriscore, [apiResponse.totalCalories, apiResponse.totalSugar, apiResponse.totalFats, apiResponse.totalSodium, apiResponse.totalFibers, apiResponse.totalProtein]);
+                            Reference storageRef = FirebaseStorage.instance.ref().child(fileName);
 
-                    print("user-images");
+                            await storageRef.putFile(File(imagePath));
 
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (context) => Home()),
-                    );
-                  },
-                  child: const Text('Save'),
+                            String downloadURL = await storageRef.getDownloadURL();
+
+                            await DatabaseService(uid: uid).updateUserImages(downloadURL, apiResponse.foodNames, apiResponse.nutriscore, [apiResponse.totalCalories, apiResponse.totalSugar, apiResponse.totalFats, apiResponse.totalSodium, apiResponse.totalFibers, apiResponse.totalProtein], feedbackStore);
+
+
+                            print("user-images");
+
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(builder: (context) => Home()),
+                            );
+                          },
+                          child: const Text('Save'),
+                        ),
+                      ],
+                    ) : const CircularProgressIndicator();
+                  }
                 ),
 
                 // Text("Foods: ${apiResponse.foodNames}\n"

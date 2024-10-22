@@ -20,7 +20,10 @@ var productID = '';
 var usdaApiKey = 'h3r9HE67APvagn1FErc7B1fJFpSWxgpte6ZGrSgQ';
 var isUSDA = true;
 
-var imageApiKey = ['AIzaSyBa0dktfgY0-9QhwXv3llTz59ZDR09ssv0', 'AIzaSyD68z07h1XA0Gj15f_xeo3VNrgYeNHVzWE'];
+var imageApiKey = [
+  'AIzaSyBa0dktfgY0-9QhwXv3llTz59ZDR09ssv0',
+  'AIzaSyD68z07h1XA0Gj15f_xeo3VNrgYeNHVzWE'
+];
 var cx = '033f69657aaa34f71';
 var productDescription = '';
 
@@ -32,6 +35,9 @@ final model = GenerativeModel(
     systemInstruction: Content.text(
         "For context, you are integrated into an app designed to help people determine what they should be eating. You will be given background information about the person. The person will scan a given product and the product will be then told to you and you are to give advice about the product based on the person's background information. The information you will provide is not to be like a conversation but just information. Structure your response to have a first a short paragraph on the overview of the product, then a paragraph about considerations, and then lastly a paragraph on alternatives"),
     apiKey: 'AIzaSyDCwXGUxGbJhfpz6GfENeP4oUpKp6yaLXo');
+
+final model2 = GenerativeModel(model: 'gemini-1.5-flash', apiKey: 'AIzaSyDCwXGUxGbJhfpz6GfENeP4oUpKp6yaLXo');
+
 
 class ProductUSDA {
   final String description;
@@ -231,31 +237,33 @@ Future<ProductImage> fetchProductImage() async {
   temp = productDescription.replaceAll('&', 'and');
 
   var response = await http.get(
-    Uri.parse('https://www.googleapis.com/customsearch/v1?key=${imageApiKey[0]}&cx=$cx&q=$temp&searchType=image'),
+    Uri.parse(
+        'https://www.googleapis.com/customsearch/v1?key=${imageApiKey[0]}&cx=$cx&q=$temp&searchType=image'),
   );
 
   if (response.statusCode == 200) {
     // If the server did return a 200 OK response,
     // then parse the JSON.
-    return ProductImage.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
-
+    return ProductImage.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>);
   } else {
-
     response = await http.get(
-      Uri.parse('https://www.googleapis.com/customsearch/v1?key=${imageApiKey[1]}&cx=$cx&q=$temp&searchType=image'),
+      Uri.parse(
+          'https://www.googleapis.com/customsearch/v1?key=${imageApiKey[1]}&cx=$cx&q=$temp&searchType=image'),
     );
 
     if (response.statusCode == 200) {
       // If the server did return a 200 OK response,
       // then parse the JSON.
-      return ProductImage.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      return ProductImage.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
     } else {
       throw Exception('Failed to load product image');
     }
   }
 }
 
-Future<String> getFeedback(String itemName, String description) async {
+Future<String> getScanFeedback(String itemName, String description) async {
   String uid = FirebaseAuth.instance.currentUser!.uid;
 
   var data = DatabaseService(uid: uid).getUserData();
@@ -263,7 +271,6 @@ Future<String> getFeedback(String itemName, String description) async {
   String geminiResponse = "";
 
   await for (dynamic field in data) {
-
     print(field.name);
     print(field.gender);
     print(field.age);
@@ -276,7 +283,8 @@ Future<String> getFeedback(String itemName, String description) async {
     geminiResponse = (await model.generateContent([
       Content.text(
           "Provide personalized feedback on this food item based on this person's description and goals. The person is a ${field.gender} aged ${field.age} years old whose exercise level is ${field.activityLevel}. The person is ${field.height} inches tall and weighs ${field.weight} pounds. The person is looking to eat a ${itemName} ${description}")
-    ])).text!;
+    ]))
+        .text!;
 
     break;
   }
@@ -340,6 +348,7 @@ class _MyFoodState extends State<Scan> {
   late Future<ProductUSDA> futureProduct;
   late Future<ProductImage> futureImage;
   late Future<String> futureFeedback;
+
   // String geminiResponse = "";
   final Completer<ProductUSDA> productCompleter = Completer();
   final Completer<ProductImage> imageCompleter = Completer();
@@ -354,6 +363,7 @@ class _MyFoodState extends State<Scan> {
   late String description;
   late String nutriScore;
   late String feedback;
+  late String geminiProductName;
   late List<String> ingredients;
   late List<double> nutrients;
 
@@ -371,6 +381,9 @@ class _MyFoodState extends State<Scan> {
       var product = await fetchProductUSDA();
 
       productDescription = product.description;
+      var brandName = product.brandName;
+
+      geminiProductName = (await model2.generateContent([Content.text("Taking in brand name and product name output full name of product as displayed on a store website. Brand name is $brandName and Product name is $productDescription.  Be careful that sometimes there could me missing a brand name or a product name but still try to get an educated guess on what the product actually is. Only output full product name and nothing else. Make it properly capitalized")])).text!;
 
       var image = await fetchProductImage();
 
@@ -379,18 +392,17 @@ class _MyFoodState extends State<Scan> {
       productCompleter.complete(product);
       imageCompleter.complete(image);
 
-
       print("NAMES");
       print(product.brandName);
       print(product.description);
-      var geminiResponse = await getFeedback(product.brandName, product.description);
+      var geminiResponse =
+          await getScanFeedback(product.brandName, product.description);
       print(geminiResponse);
 
       feedbackCompleter.complete(geminiResponse);
 
       print("FINISHED RUN");
     } catch (e) {
-
       Navigator.push(
           context,
           MaterialPageRoute(
@@ -408,378 +420,604 @@ class _MyFoodState extends State<Scan> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
       child: SingleChildScrollView(
-        child: Flex(
-          mainAxisSize: MainAxisSize.min,
-          direction: Axis.vertical,
-          children: [
-            FutureBuilder<ProductImage>(
-              future: futureImage,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Align(
-                    alignment: Alignment.center,
-                    child: CircularProgressIndicator(),
-                  );
-                } else if (snapshot.hasData) {
+          child: Flex(
+        mainAxisSize: MainAxisSize.min,
+        direction: Axis.vertical,
+        children: [
+          FutureBuilder<ProductImage>(
+            future: futureImage,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Align(
+                  alignment: Alignment.center,
+                  child: CircularProgressIndicator(),
+                );
+              } else if (snapshot.hasData) {
+                imageRequest = snapshot.data!.imageURL;
 
-                  imageRequest = snapshot.data!.imageURL;
-
-                  return Stack(
-                    children: [
-                      Center(
-                        child: Container(
-                          width: MediaQuery.sizeOf(context).width*.5,
-                          height: MediaQuery.sizeOf(context).width*.5,
-                          decoration: BoxDecoration(
-                              border: Border.fromBorderSide(BorderSide(color: Colors.amber, width: 2)),
-                              borderRadius: BorderRadius.circular(5),
-                            color: Colors.grey[200]
-                          ),
-                          child: Image.network(snapshot.data!.imageURL),
+                return Stack(
+                  children: [
+                    Center(
+                      child: Container(
+                        width: MediaQuery.sizeOf(context).width * .5,
+                        height: MediaQuery.sizeOf(context).width * .5,
+                        decoration: BoxDecoration(
+                            border: Border.fromBorderSide(
+                                BorderSide(color: Colors.amber, width: 2)),
+                            borderRadius: BorderRadius.circular(5),
+                            color: Colors.grey[200]),
+                        child: Image.network(snapshot.data!.imageURL),
+                      ),
+                    ),
+                    Positioned(
+                      top: 1,
+                      left: 1,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(builder: (context) => Home()));
+                        },
+                        child: Icon(MdiIcons.fromString("window-close")),
+                        style: ElevatedButton.styleFrom(
+                          // styling the button
+                          shape: CircleBorder(),
+                          padding: EdgeInsets.all(10),
+                          foregroundColor: Colors.red,
+                          backgroundColor: Colors.grey[200],
+                          iconColor: Colors.red,
+                          elevation: 2.0,
+                          // backgroundColor: Colors.transparent,
                         ),
                       ),
-
-                      Positioned(
-                        top: 1,
-                        left: 1,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(builder: (context) => Home())
-                            );
-                          },
-                          child: Icon(MdiIcons.fromString("window-close")),
-                          style: ElevatedButton.styleFrom( // styling the button
-                            shape: CircleBorder(),
-                            padding: EdgeInsets.all(10),
-                            foregroundColor: Colors.red,
-                            backgroundColor: Colors.grey[200],
-                            iconColor: Colors.red,
-                            elevation: 2.0,
-                            // backgroundColor: Colors.transparent,
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                } else if (snapshot.hasError) {
-                  return Container();
-                }
-                // By default, show a loading spinner.
-                // return Column(
-                //     children: [
-                //       CircularProgressIndicator(),
-                //     ],
-                //   mainAxisAlignment: MainAxisAlignment.center,
-                // );
+                    ),
+                  ],
+                );
+              } else if (snapshot.hasError) {
                 return Container();
-              },
-            ),
-            FutureBuilder<ProductUSDA>(
-              future: futureProduct,
-              builder: (context, snapshot) {
-                print("BRAND NAME");
-                print(snapshot.data?.brandName);
-                if (snapshot.hasData) {
-                  ProductUSDA product = snapshot.data!;
-                  nutriScore = calculateNutriScore(
-                    product.energy,
-                    product.sugars,
-                    product.saturatedFats,
-                    product.sodium,
-                    product.fiber,
-                    product.protein,
-                  );
+              }
+              // By default, show a loading spinner.
+              // return Column(
+              //     children: [
+              //       CircularProgressIndicator(),
+              //     ],
+              //   mainAxisAlignment: MainAxisAlignment.center,
+              // );
+              return Container();
+            },
+          ),
+          FutureBuilder<ProductUSDA>(
+            future: futureProduct,
+            builder: (context, snapshot) {
+              print("BRAND NAME");
+              print(snapshot.data?.brandName);
+              if (snapshot.hasData) {
+                ProductUSDA product = snapshot.data!;
+                nutriScore = calculateNutriScore(
+                  product.energy,
+                  product.sugars,
+                  product.saturatedFats,
+                  product.sodium,
+                  product.fiber,
+                  product.protein,
+                );
 
-                  itemName = snapshot.data!.brandName;
-                  description = snapshot.data!.description;
+                itemName = snapshot.data!.brandName;
+                description = snapshot.data!.description;
 
-                  ingredients = snapshot.data!.ingredients.split(", ");
+                ingredients = snapshot.data!.ingredients.split(", ");
 
-                  for (int i = 0; i < ingredients.length; i++) {
-                    ingredients[i] = toBeginningOfSentenceCase(ingredients[i].replaceAll('(', '').replaceAll(')', '').replaceAll('[', '').replaceAll(']', '').replaceAll('.', '').toLowerCase());
-                  }
+                for (int i = 0; i < ingredients.length; i++) {
+                  ingredients[i] = toBeginningOfSentenceCase(ingredients[i]
+                      .replaceAll('(', '')
+                      .replaceAll(')', '')
+                      .replaceAll('[', '')
+                      .replaceAll(']', '')
+                      .replaceAll('.', '')
+                      .toLowerCase());
+                }
 
-                  ingredients = ingredients.toSet().toList();
+                ingredients = ingredients.toSet().toList();
 
-                  nutrients = [product.energy, product.sugars, product.saturatedFats, product.sodium, product.fiber, product.protein];
+                nutrients = [
+                  product.energy,
+                  product.sugars,
+                  product.saturatedFats,
+                  product.sodium,
+                  product.fiber,
+                  product.protein
+                ];
 
-                  return Column(
-                    children: [
-                      SizedBox(height: 10,),
+                return Column(
+                  children: [
+                    SizedBox(
+                      height: 10,
+                    ),
 
-                      Divider(color: Colors.greenAccent, height: 1.0,),
+                    Divider(
+                      color: Colors.greenAccent,
+                      height: 1.0,
+                    ),
 
-                      SizedBox(height: 20,),
+                    SizedBox(
+                      height: 20,
+                    ),
 
-                      Flex(
-                        direction: Axis.vertical,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                    Flex(
+                      direction: Axis.vertical,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                            toBeginningOfSentenceCase(
+                                geminiProductName.toLowerCase()),
+                            style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center,),
+                      ],
+                    ),
+
+                    SizedBox(
+                      height: 20,
+                    ),
+
+                    Container(
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(15),
+                          color: Colors.greenAccent),
+                      padding: EdgeInsets.symmetric(
+                          vertical: 10.0, horizontal: 20.0),
+                      width: MediaQuery.sizeOf(context).width * .5,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(toBeginningOfSentenceCase(snapshot.data!.brandName.toLowerCase()), style: Theme.of(context).textTheme.titleLarge),
-                          Text(toBeginningOfSentenceCase(snapshot.data!.description.toLowerCase()), textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+                          Text(
+                            "Nutriscore",
+                            textAlign: TextAlign.left,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          Text(
+                            nutriScore,
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
                         ],
                       ),
+                    ),
 
-                      SizedBox(height: 20,),
+                    SizedBox(
+                      height: 20,
+                    ),
 
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          color: Colors.greenAccent
-                        ),
-                        padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
-                        width: MediaQuery.sizeOf(context).width*.5,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text("Nutriscore", textAlign: TextAlign.left, style: Theme.of(context).textTheme.titleMedium,),
-                            Text(nutriScore, style: Theme.of(context).textTheme.labelLarge,),
-                          ],
-                        ),
+                    Divider(
+                      color: Colors.greenAccent,
+                      height: 1.0,
+                    ),
+
+                    SizedBox(
+                      height: 20,
+                    ),
+
+                    Container(
+                      child: Text(
+                        "Nutrition Advisor",
+                        textAlign: TextAlign.left,
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
-
-                      SizedBox(height: 20,),
-
-                      Divider(color: Colors.greenAccent, height: 1.0,),
-
-                      SizedBox(height: 20,),
-
-                      Container(
-                        child: Text("Nutrition Advisor", textAlign: TextAlign.left, style: Theme.of(context).textTheme.titleMedium,),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          border: Border.all(color: Colors.greenAccent, width: 1.0),
-                        ),
-                        padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        border:
+                            Border.all(color: Colors.greenAccent, width: 1.0),
                       ),
+                      padding:
+                          EdgeInsets.symmetric(vertical: 5.0, horizontal: 10),
+                    ),
 
-                      SizedBox(height: 10,),
+                    SizedBox(
+                      height: 10,
+                    ),
 
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(50),
-                          border: Border.all(color: Colors.grey, width: 2.0),
-                        ),
-                        child: ListTile(
-                          leading: Container(
-                            width: 35, height: 35,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(100),
-                                color: Colors.greenAccent
-                            ),
-                            child: Icon(MdiIcons.fromString("spoon-sugar")),
-                          ),
-                          title: Text("Energy", style: Theme.of(context).textTheme.titleMedium,),
-                          trailing: Container(
-                            child: Text("${nutrients[0].toStringAsFixed(2)} kJ", style: Theme.of(context).textTheme.bodyMedium,),
-                          ),
-                        ),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(50),
+                        border: Border.all(color: Colors.grey, width: 2.0),
                       ),
-                      SizedBox(height: 5,),
-
-                      Container(
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(50),
-                            border: Border.all(color: Colors.grey, width: 2.0),
+                      child: ListTile(
+                        leading: Container(
+                          width: 35,
+                          height: 35,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(100),
+                              color: Colors.greenAccent),
+                          child: Icon(MdiIcons.fromString("spoon-sugar")),
                         ),
-                        child: ListTile(
-                          leading: Container(
-                            width: 35, height: 35,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(100),
-                                color: Colors.greenAccent
-                            ),
-                            child: Icon(MdiIcons.fromString("spoon-sugar")),
-                          ),
-                          title: Text("Sugars", style: Theme.of(context).textTheme.titleMedium,),
-                          trailing: Container(
-                            child: Text("${nutrients[1]} g", style: Theme.of(context).textTheme.bodyMedium,),
+                        title: Text(
+                          "Energy",
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        trailing: Container(
+                          child: Text(
+                            "${nutrients[0].toStringAsFixed(2)} kJ",
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
                       ),
-                      SizedBox(height: 5,),
+                    ),
+                    SizedBox(
+                      height: 5,
+                    ),
 
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(50),
-                          border: Border.all(color: Colors.grey, width: 2.0),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(50),
+                        border: Border.all(color: Colors.grey, width: 2.0),
+                      ),
+                      child: ListTile(
+                        leading: Container(
+                          width: 35,
+                          height: 35,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(100),
+                              color: Colors.greenAccent),
+                          child: Icon(MdiIcons.fromString("spoon-sugar")),
                         ),
-                        child: ListTile(
-                          leading: Container(
-                            width: 35, height: 35,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(100),
-                                color: Colors.greenAccent
-                            ),
-                            child: Icon(MdiIcons.fromString("water-outline")),
-                          ),
-                          title: Text("Saturated Fats", style: Theme.of(context).textTheme.titleMedium,),
-                          trailing: Container(
-                            child: Text("${nutrients[2]} g", style: Theme.of(context).textTheme.bodyMedium,),
+                        title: Text(
+                          "Sugars",
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        trailing: Container(
+                          child: Text(
+                            "${nutrients[1]} g",
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
                       ),
-                      SizedBox(height: 5,),
+                    ),
+                    SizedBox(
+                      height: 5,
+                    ),
 
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(50),
-                          border: Border.all(color: Colors.grey, width: 2.0),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(50),
+                        border: Border.all(color: Colors.grey, width: 2.0),
+                      ),
+                      child: ListTile(
+                        leading: Container(
+                          width: 35,
+                          height: 35,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(100),
+                              color: Colors.greenAccent),
+                          child: Icon(MdiIcons.fromString("water-outline")),
                         ),
-                        child: ListTile(
-                          leading: Container(
-                            width: 35, height: 35,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(100),
-                                color: Colors.greenAccent
-                            ),
-                            child: Icon(MdiIcons.fromString("shaker-outline")),
-                          ),
-                          title: Text("Sodium", style: Theme.of(context).textTheme.titleMedium,),
-                          trailing: Container(
-                            child: Text("${nutrients[3]} mg", style: Theme.of(context).textTheme.bodyMedium,),
+                        title: Text(
+                          "Saturated Fats",
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        trailing: Container(
+                          child: Text(
+                            "${nutrients[2]} g",
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
                       ),
-                      SizedBox(height: 5,),
+                    ),
+                    SizedBox(
+                      height: 5,
+                    ),
 
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(50),
-                          border: Border.all(color: Colors.grey, width: 2.0),
-                        ),
-                        child: ListTile(
-                          leading: Container(
-                            width: 35, height: 35,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(100),
-                                color: Colors.greenAccent
-                            ),
-                            child: Icon(MdiIcons.fromString("barley")),
-                          ),
-                          title: Text("Fiber", style: Theme.of(context).textTheme.titleMedium,),
-                          trailing: Container(
-                            child: Text("${nutrients[4]} g", style: Theme.of(context).textTheme.bodyMedium,),
-                          ),
-                        ),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(50),
+                        border: Border.all(color: Colors.grey, width: 2.0),
                       ),
-                      SizedBox(height: 5,),
-
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(50),
-                          border: Border.all(color: Colors.grey, width: 2.0),
+                      child: ListTile(
+                        leading: Container(
+                          width: 35,
+                          height: 35,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(100),
+                              color: Colors.greenAccent),
+                          child: Icon(MdiIcons.fromString("shaker-outline")),
                         ),
-                        child: ListTile(
-                          leading: Container(
-                            width: 35, height: 35,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(100),
-                                color: Colors.greenAccent
-                            ),
-                            child: Icon(MdiIcons.fromString("food-drumstick-outline")),
-                          ),
-                          title: Text("Protein", style: Theme.of(context).textTheme.titleMedium,),
-                          trailing: Container(
-                            child: Text("${nutrients[5]} g", style: Theme.of(context).textTheme.bodyMedium,),
+                        title: Text(
+                          "Sodium",
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        trailing: Container(
+                          child: Text(
+                            "${nutrients[3]} mg",
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
                       ),
+                    ),
+                    SizedBox(
+                      height: 5,
+                    ),
 
-                      SizedBox(height: 20,),
-
-                      Divider(color: Colors.greenAccent, height: 1.0,),
-
-                      SizedBox(height: 20,),
-
-                      Container(
-                        child: Text("Ingredients List", textAlign: TextAlign.left, style: Theme.of(context).textTheme.titleLarge,),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          border: Border.all(color: Colors.greenAccent, width: 1.0),
-                        ),
-                        padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(50),
+                        border: Border.all(color: Colors.grey, width: 2.0),
                       ),
-
-                      SizedBox(height: 5,),
-
-                      SizedBox(
-                        height: MediaQuery.sizeOf(context).height*.5,
-                        child: Scrollbar(
-                          child: ListView.builder(
-                              shrinkWrap: true,
-                              scrollDirection: Axis.vertical,
-                              itemCount: ingredients.length,
-                              itemBuilder: (BuildContext cntxt, int index) {
-                                return Flex(
-                                  direction: Axis.vertical,
-                                  children: [
-                                    ListTile(
-                                      title: Text(ingredients[index], style: Theme.of(context).textTheme.titleMedium,),
-                                      trailing: Container(
-                                        width: 5, height: 5,
-                                        decoration:
-                                          BoxDecoration(
-                                            borderRadius: BorderRadius.circular(75),
-                                            color: Colors.greenAccent
-                                          ),
-                                        ),
-                                    ),
-                                    Divider(color: Colors.grey[300], height: 1,)
-                                ]
-                              );
-                            },
+                      child: ListTile(
+                        leading: Container(
+                          width: 35,
+                          height: 35,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(100),
+                              color: Colors.greenAccent),
+                          child: Icon(MdiIcons.fromString("barley")),
+                        ),
+                        title: Text(
+                          "Fiber",
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        trailing: Container(
+                          child: Text(
+                            "${nutrients[4]} g",
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
                       ),
+                    ),
+                    SizedBox(
+                      height: 5,
+                    ),
 
-                      SizedBox(height: 20,),
-
-                      Divider(color: Colors.greenAccent, height: 1.0,),
-
-                      SizedBox(height: 20,),
-
-                      Container(
-                        child: Text("Personalized Feedback", textAlign: TextAlign.left, style: Theme.of(context).textTheme.titleMedium,),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          border: Border.all(color: Colors.greenAccent, width: 1.0),
-                        ),
-                        padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(50),
+                        border: Border.all(color: Colors.grey, width: 2.0),
                       ),
+                      child: ListTile(
+                        leading: Container(
+                          width: 35,
+                          height: 35,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(100),
+                              color: Colors.greenAccent),
+                          child: Icon(
+                              MdiIcons.fromString("food-drumstick-outline")),
+                        ),
+                        title: Text(
+                          "Protein",
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        trailing: Container(
+                          child: Text(
+                            "${nutrients[5]} g",
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                      ),
+                    ),
 
-                      SizedBox(height: 5,),
+                    SizedBox(
+                      height: 20,
+                    ),
 
-                      // Text(
-                      //     "\nProduct: ${snapshot.data!.brandName} ${snapshot.data!.description}\n\n\n\nIngredients: ${snapshot.data!.ingredients}\n\nNutrients: ${snapshot.data!.foodNutrients}\n\nNutriscore: $nutriScore\n\nRecommendations: $geminiResponse"),
-                    ],
-                  );
-                } else if (snapshot.hasError) {
-                  return Container();
-                }
+                    Divider(
+                      color: Colors.greenAccent,
+                      height: 1.0,
+                    ),
 
-                // By default, show a loading spinner.
+                    SizedBox(
+                      height: 20,
+                    ),
+
+                    Container(
+                      child: Text(
+                        "Ingredients List",
+                        textAlign: TextAlign.left,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        border:
+                            Border.all(color: Colors.greenAccent, width: 1.0),
+                      ),
+                      padding:
+                          EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+                    ),
+
+                    SizedBox(
+                      height: 5,
+                    ),
+
+                    SizedBox(
+                      height: MediaQuery.sizeOf(context).height * .5,
+                      child: Scrollbar(
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          scrollDirection: Axis.vertical,
+                          itemCount: ingredients.length,
+                          itemBuilder: (BuildContext cntxt, int index) {
+                            return Flex(direction: Axis.vertical, children: [
+                              ListTile(
+                                title: Text(
+                                  ingredients[index],
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium,
+                                ),
+                                trailing: Container(
+                                  width: 5,
+                                  height: 5,
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(75),
+                                      color: Colors.greenAccent),
+                                ),
+                              ),
+                              Divider(
+                                color: Colors.grey[300],
+                                height: 1,
+                              )
+                            ]);
+                          },
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(
+                      height: 20,
+                    ),
+
+                    Divider(
+                      color: Colors.greenAccent,
+                      height: 1.0,
+                    ),
+
+                    SizedBox(
+                      height: 20,
+                    ),
+
+                    // Text(
+                    //     "\nProduct: ${snapshot.data!.brandName} ${snapshot.data!.description}\n\n\n\nIngredients: ${snapshot.data!.ingredients}\n\nNutrients: ${snapshot.data!.foodNutrients}\n\nNutriscore: $nutriScore\n\nRecommendations: $geminiResponse"),
+                  ],
+                );
+              } else if (snapshot.hasError) {
                 return Container();
-              },
-            ),
+              }
 
-            FutureBuilder(
+              // By default, show a loading spinner.
+              return Container();
+            },
+          ),
+          FutureBuilder(
               future: futureFeedback,
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
                   feedback = snapshot.data!;
 
+                  print(feedback);
+                  var sections = feedback.split("\n");
+                  print("SECTIONS");
+                  print(sections.toString());
+
                   return Column(
                     children: [
-                      Text(feedback),
+                      Container(
+                        child: Text(
+                          "Personalized Feedback",
+                          textAlign: TextAlign.left,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(15),
+                          border:
+                              Border.all(color: Colors.greenAccent, width: 1.0),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                            vertical: 5.0, horizontal: 10.0),
+                      ),
+
+                      SizedBox(
+                        height: 15,
+                      ),
+
+                      Container(
+                        child: DefaultTabController(
+                          length: 3, // Number of tabs
+                          child: Container(
+                            color: Colors.grey[200],
+                            // Background color of the container
+                            padding: const EdgeInsets.all(10.0),
+                            child: Column(
+                              children: [
+                                // TabBar for navigation between sections
+                                TabBar(
+                                  labelColor: Colors.greenAccent,
+                                  unselectedLabelColor: Colors.grey,
+                                  indicatorColor: Colors.greenAccent,
+                                  tabs: [
+                                    Tab(
+                                        child: Center(
+                                            child: Text('Overview',
+                                                style:
+                                                    TextStyle(fontSize: 12)))),
+                                    Tab(
+                                        child: Center(
+                                            child: Text('Considerations',
+                                                style:
+                                                    TextStyle(fontSize: 12)))),
+                                    Tab(
+                                        child: Center(
+                                            child: Text('Alternatives',
+                                                style:
+                                                    TextStyle(fontSize: 12)))),
+                                  ],
+                                ),
+                                SizedBox(height: 16),
+
+                                // TabBarView to display content based on the selected tab
+                                SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * .2,
+                                  child: TabBarView(
+                                    children: [
+                                      Center(
+                                          child: OverviewSection(
+                                              text: sections[0])),
+                                      Center(
+                                          child: ConsiderationsSection(
+                                              text: sections[2])),
+                                      Center(
+                                          child: AlternativesSection(
+                                              text: sections[4])),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5),
+                          border:
+                              Border.all(color: Colors.greenAccent, width: 2.0),
+                        ),
+                      ),
+
+                      // Expanded(
+                      //   child: DefaultTabController(
+                      //     length: 3,
+                      //     child: Scaffold(
+                      //       appBar: TabBar(
+                      //         title: Text('Personalized Feedback'),
+                      //         bottom: const TabBar(
+                      //           tabs: [
+                      //             Tab(text: 'Overview'),
+                      //             Tab(text: 'Considerations'),
+                      //             Tab(text: 'Alternatives'),
+                      //           ],
+                      //         ),
+                      //       ),
+                      //       body: TabBarView(
+                      //         children: [
+                      //           OverviewSection(text: sections[0]),
+                      //           ConsiderationsSection(text: sections[1]),
+                      //           AlternativesSection(text: sections[2]),
+                      //         ],
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+
+                      SizedBox(
+                        height: 20,
+                      ),
+
+                      // Text(feedback),
                       OutlinedButton(
                         onPressed: () async {
-
                           String uid = FirebaseAuth.instance.currentUser!.uid;
 
-                          await DatabaseService(uid: uid).updateUserScans(imageRequest, itemName, description, feedback, nutriScore, ingredients, nutrients);
+                          await DatabaseService(uid: uid).updateUserScans(
+                              imageRequest,
+                              geminiProductName,
+                              description,
+                              feedback,
+                              nutriScore,
+                              ingredients,
+                              nutrients);
 
                           Navigator.of(context).pushReplacement(
                             MaterialPageRoute(builder: (context) => Home()),
@@ -787,8 +1025,10 @@ class _MyFoodState extends State<Scan> {
                         },
                         child: const Text('Save'),
                         style: ButtonStyle(
-                          foregroundColor: WidgetStateProperty.all<Color>(Colors.green),
-                          overlayColor: WidgetStateProperty.all<Color>(Colors.amber),
+                          foregroundColor:
+                              WidgetStateProperty.all<Color>(Colors.green),
+                          overlayColor:
+                              WidgetStateProperty.all<Color>(Colors.amber),
                         ),
                       ),
                     ],
@@ -796,11 +1036,57 @@ class _MyFoodState extends State<Scan> {
                 }
 
                 return Container();
-              }
-            ),
-          ],
-        )
-      ),
+              }),
+        ],
+      )),
     );
+  }
+}
+
+class OverviewSection extends StatelessWidget {
+  final text;
+
+  const OverviewSection({super.key, this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+        alignment: Alignment.center,
+        child: Text(
+          text,
+          style: Theme.of(context).textTheme.bodyMedium,
+        ));
+  }
+}
+
+class ConsiderationsSection extends StatelessWidget {
+  final text;
+
+  const ConsiderationsSection({super.key, this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+        alignment: Alignment.center,
+        child: Text(
+          text,
+          style: Theme.of(context).textTheme.bodyMedium,
+        ));
+  }
+}
+
+class AlternativesSection extends StatelessWidget {
+  final text;
+
+  const AlternativesSection({super.key, this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+        alignment: Alignment.center,
+        child: Text(
+          text,
+          style: Theme.of(context).textTheme.bodyMedium,
+        ));
   }
 }
