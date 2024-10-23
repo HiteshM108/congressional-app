@@ -611,6 +611,30 @@ class _ImageViewPageState extends State<ImageViewPage> {
 
                     return feedback != "" ? Column(
                       children: [
+
+                        SizedBox(
+                          height: 20,
+                        ),
+
+                        Container(
+                          child: Text(
+                            "Personalized Feedback",
+                            textAlign: TextAlign.left,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(15),
+                            border:
+                            Border.all(color: Colors.greenAccent, width: 1.0),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                              vertical: 5.0, horizontal: 10.0),
+                        ),
+
+                        SizedBox(
+                          height: 15,
+                        ),
+
                         Container(
                           child: DefaultTabController(
                             length: 3, // Number of tabs
@@ -635,7 +659,7 @@ class _ImageViewPageState extends State<ImageViewPage> {
                                           child: Center(
                                               child: Text('Considerations',
                                                   style:
-                                                  TextStyle(fontSize: 12)))),
+                                                  TextStyle(fontSize: 10)))),
                                       Tab(
                                           child: Center(
                                               child: Text('Alternatives',
@@ -648,7 +672,7 @@ class _ImageViewPageState extends State<ImageViewPage> {
                                   // TabBarView to display content based on the selected tab
                                   SizedBox(
                                     height:
-                                    MediaQuery.of(context).size.height * .2,
+                                    MediaQuery.of(context).size.height * .25,
                                     child: TabBarView(
                                       children: [
                                         Center(
@@ -676,7 +700,7 @@ class _ImageViewPageState extends State<ImageViewPage> {
 
                         SizedBox(height: 20,),
 
-                        ElevatedButton(
+                        OutlinedButton(
                           onPressed: () async {
 
                             String uid = FirebaseAuth.instance.currentUser!.uid;
@@ -691,15 +715,20 @@ class _ImageViewPageState extends State<ImageViewPage> {
 
                             await DatabaseService(uid: uid).updateUserImages(downloadURL, apiResponse.foodNames, apiResponse.nutriscore, [apiResponse.totalCalories, apiResponse.totalSugar, apiResponse.totalFats, apiResponse.totalSodium, apiResponse.totalFibers, apiResponse.totalProtein], feedbackStore);
 
-
-                            print("user-images");
-
                             Navigator.of(context).pushReplacement(
                               MaterialPageRoute(builder: (context) => Home()),
                             );
                           },
                           child: const Text('Save'),
+                          style: ButtonStyle(
+                            foregroundColor:
+                            WidgetStateProperty.all<Color>(Colors.green),
+                            overlayColor:
+                            WidgetStateProperty.all<Color>(Colors.amber),
+                          ),
                         ),
+
+                        SizedBox(height: 10),
                       ],
                     ) : const CircularProgressIndicator();
                   }

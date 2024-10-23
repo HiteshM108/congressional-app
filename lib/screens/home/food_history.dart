@@ -112,6 +112,9 @@ class _FoodHistory extends State<FoodHistory> {
                         errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
                       ),
                     ),
+
+                    const VerticalDivider(width: 10, color: Colors.greenAccent,thickness: 2,),
+
                     Expanded(
                       flex: 1,
                       child: Padding(
@@ -128,17 +131,19 @@ class _FoodHistory extends State<FoodHistory> {
                               style: const TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 18,
-                                color: Color(0xff000000),
+                                color: Colors.black45,
                               ),
                             ),
                             const SizedBox(height: 4),
                             const SizedBox(height: 20),
-                            Text(
-                              nutriscore,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 30,
-                                color: nutriscoreColor(nutriscore),
+                            Center(
+                              child: Text(
+                                nutriscore,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 30,
+                                  color: nutriscoreColor(nutriscore),
+                                ),
                               ),
                             ),
                           ],

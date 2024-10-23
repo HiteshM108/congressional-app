@@ -249,6 +249,14 @@ class _CaptureState extends State<CapturedImage> {
                     ),
                   ),
 
+                  SizedBox(height: 20,),
+
+                  Divider(color: Colors.greenAccent, height: 1.0,),
+
+                  SizedBox(
+                    height: 20,
+                  ),
+
                   Column(
                     children: [
                       Container(
@@ -294,7 +302,7 @@ class _CaptureState extends State<CapturedImage> {
                                         child: Center(
                                             child: Text('Considerations',
                                                 style:
-                                                TextStyle(fontSize: 12)))),
+                                                TextStyle(fontSize: 10)))),
                                     Tab(
                                         child: Center(
                                             child: Text('Alternatives',

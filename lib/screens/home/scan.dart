@@ -937,7 +937,7 @@ class _MyFoodState extends State<Scan> {
                                         child: Center(
                                             child: Text('Considerations',
                                                 style:
-                                                    TextStyle(fontSize: 12)))),
+                                                    TextStyle(fontSize: 10)))),
                                     Tab(
                                         child: Center(
                                             child: Text('Alternatives',
@@ -950,7 +950,7 @@ class _MyFoodState extends State<Scan> {
                                 // TabBarView to display content based on the selected tab
                                 SizedBox(
                                   height:
-                                      MediaQuery.of(context).size.height * .2,
+                                      MediaQuery.of(context).size.height * .25,
                                   child: TabBarView(
                                     children: [
                                       Center(

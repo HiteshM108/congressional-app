@@ -274,11 +274,8 @@ class _UserInfoSetupState extends State<UserInfoSetup> {
                           ),
                           onPressed: () async {
                             if (_formKey.currentState!.validate()) {
-                              Future.delayed(const Duration(milliseconds: 10000), () {
-                                Navigator.pop(
-                                    context, <String>[name, age, weight, height, selectedGender, activityLevel]);
-                              });
-
+                              Navigator.pop(
+                                  context, <String>[name, age, weight, height, selectedGender, activityLevel]);
                             }
                           },
                           child: const Text('Complete Registration'))
