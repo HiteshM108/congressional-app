@@ -57,9 +57,10 @@ class _FeedState extends State<Feed> {
             margin: EdgeInsets.all(0),
             color: Colors.white,
             shadowColor: Color(0xff000000),
-            elevation: 1,
+            elevation: 10,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12.0),
+              side: BorderSide(color: Colors.grey, width: 2.0, style: BorderStyle.solid),
             ),
             child: InkWell(
               onTap: (){
@@ -101,7 +102,7 @@ class _FeedState extends State<Feed> {
                     ),
                   ),
 
-                  VerticalDivider(width: 10, color: Colors.greenAccent,thickness: 2,),
+                  VerticalDivider(width: 10, color: Colors.grey,thickness: 2,),
 
                   Expanded(
                     flex: 1,
@@ -122,7 +123,7 @@ class _FeedState extends State<Feed> {
                               fontWeight: FontWeight.w700,
                               fontStyle: FontStyle.normal,
                               fontSize: 18,
-                              color: Colors.black45,
+                              color: Colors.black,
                             ),
                           ),
                           Padding(
@@ -186,9 +187,10 @@ class _FeedState extends State<Feed> {
               margin: EdgeInsets.all(0),
               color: Color(0xffffffff),
               shadowColor: Color(0xff000000),
-              elevation: 1,
+              elevation: 10,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12.0),
+                side: BorderSide(color: Colors.grey, width: 2.0, style: BorderStyle.solid),
               ),
               child: InkWell(
                 onTap: (){
@@ -231,9 +233,9 @@ class _FeedState extends State<Feed> {
                       ),
                     ),
 
-                    // Divider(height: 5, color: Colors.greenAccent,),
+                    // Divider(height: 5, color: Colors.grey,),
                     // Text("test"),
-                    VerticalDivider(width: 10, color: Colors.greenAccent,thickness: 2,),
+                    VerticalDivider(width: 10, color: Colors.grey,thickness: 2,),
 
                     Expanded(
                       flex: 1,
@@ -254,7 +256,7 @@ class _FeedState extends State<Feed> {
                                 fontWeight: FontWeight.w700,
                                 fontStyle: FontStyle.normal,
                                 fontSize: 18,
-                                color: Colors.black45,
+                                color: Colors.black,
                               ),
                             ),
                             Padding(
@@ -388,55 +390,64 @@ class _FeedState extends State<Feed> {
                     mainAxisSize:MainAxisSize.max,
                     children:[
 
-                      Expanded(
-                        flex: 1,
-                        child: Align(
-                          alignment:Alignment(-0.8, 0.0),
-                          child:Text(
-                            "Scan History",
-                            textAlign: TextAlign.start,
-                            overflow:TextOverflow.clip,
-                            style:TextStyle(
-                              fontWeight:FontWeight.w800,
-                              fontStyle:FontStyle.normal,
-                              fontSize:20,
-                              color:Colors.green,
-                            ),
-                          ),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.85,
+                        height: 50,
+                        padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: Colors.grey, width: 2.0),
+                          color: Colors.white,
                         ),
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child: Align(
-                          alignment:Alignment(0.8, 0.0),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(50),
-                              color: Colors.amber,
-                            ),
-                            child: RichText(
-                              text: TextSpan(
-                                  style:TextStyle(
-                                    fontWeight:FontWeight.w400,
-                                    fontStyle:FontStyle.normal,
-                                    fontSize:16,
-                                    color:Colors.white,
-                                  ),
-                                  text: 'See More',
-                                  recognizer: TapGestureRecognizer()..onTap = (){
-                                    scanItem != null ? Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => ScannedHistory(),
-                                        )) : showScanBackDialog();
-                                  }
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Align(
+                              alignment:Alignment(-0.8, 0.0),
+                              child:Text(
+                                "Scan History",
+                                textAlign: TextAlign.start,
+                                overflow:TextOverflow.clip,
+                                style:TextStyle(
+                                  fontWeight:FontWeight.w800,
+                                  fontStyle:FontStyle.normal,
+                                  fontSize:20,
+                                  color:Colors.green,
+                                ),
                               ),
-                              textAlign: TextAlign.start,
-                              overflow:TextOverflow.clip,
                             ),
-                          ),
-                        ),
+                            Align(
+                              alignment:Alignment(0.8, 0.0),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(50),
+                                  color: Colors.amber,
+                                ),
+                                child: RichText(
+                                  text: TextSpan(
+                                      style:TextStyle(
+                                        fontWeight:FontWeight.w400,
+                                        fontStyle:FontStyle.normal,
+                                        fontSize:16,
+                                        color:Colors.white,
+                                      ),
+                                      text: 'See More',
+                                      recognizer: TapGestureRecognizer()..onTap = (){
+                                        scanItem != null ? Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => ScannedHistory(),
+                                            )) : showScanBackDialog();
+                                      }
+                                  ),
+                                  textAlign: TextAlign.start,
+                                  overflow:TextOverflow.clip,
+                                ),
+                              ),
+                            ),
+                          ]
+                        )
                       ),
                     ],),),
                 Container(
@@ -457,55 +468,64 @@ class _FeedState extends State<Feed> {
                     mainAxisSize:MainAxisSize.max,
                     children:[
 
-                      Expanded(
-                        flex: 1,
-                        child: Align(
-                          alignment:Alignment(-0.8, 0.0),
-                          child:Text(
-                            "Camera History",
-                            textAlign: TextAlign.start,
-                            overflow:TextOverflow.clip,
-                            style:TextStyle(
-                              fontWeight:FontWeight.w800,
-                              fontStyle:FontStyle.normal,
-                              fontSize:20,
-                              color:Colors.green,
-                            ),
+                      Container(
+                          width: MediaQuery.of(context).size.width * 0.85,
+                          height: 50,
+                          padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(15),
+                            border: Border.all(color: Colors.grey, width: 2.0),
+                            color: Colors.white,
                           ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child: Align(
-                          alignment:Alignment(0.8, 0.0),
-                          child:Container(
-                            padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(50),
-                              color: Colors.amber,
-                            ),
-                            child: RichText(
-                              text: TextSpan(
-                                  style:TextStyle(
-                                    fontWeight:FontWeight.w400,
-                                    fontStyle:FontStyle.normal,
-                                    fontSize:16,
-                                    color:Colors.white,
+                          child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Align(
+                                  alignment:Alignment(-0.8, 0.0),
+                                  child:Text(
+                                    "Camera History",
+                                    textAlign: TextAlign.start,
+                                    overflow:TextOverflow.clip,
+                                    style:TextStyle(
+                                      fontWeight:FontWeight.w800,
+                                      fontStyle:FontStyle.normal,
+                                      fontSize:20,
+                                      color:Colors.green,
+                                    ),
                                   ),
-                                  text: 'See More',
-                                  recognizer: TapGestureRecognizer()..onTap = (){
-                                    foodImage != null ? Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => FoodHistory(),
-                                        )) : showCamBackDialog();
-                                  }
-                              ),
-                              textAlign: TextAlign.start,
-                              overflow:TextOverflow.clip,
-                            ),
-                          ),
-                        ),
+                                ),
+                                Align(
+                                  alignment:Alignment(0.8, 0.0),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(50),
+                                      color: Colors.amber,
+                                    ),
+                                    child: RichText(
+                                      text: TextSpan(
+                                          style:TextStyle(
+                                            fontWeight:FontWeight.w400,
+                                            fontStyle:FontStyle.normal,
+                                            fontSize:16,
+                                            color:Colors.white,
+                                          ),
+                                          text: 'See More',
+                                          recognizer: TapGestureRecognizer()..onTap = (){
+                                            foodImage != null ? Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => FoodHistory(),
+                                                )) : showCamBackDialog();
+                                          }
+                                      ),
+                                      textAlign: TextAlign.start,
+                                      overflow:TextOverflow.clip,
+                                    ),
+                                  ),
+                                ),
+                              ]
+                          )
                       ),
                     ],),),
                 Container(

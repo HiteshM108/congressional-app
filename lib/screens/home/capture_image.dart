@@ -91,9 +91,17 @@ class GeminiResponse {
       totalSugar = json["total sugars"] as String? ?? "Not Found";
 
       foodNames = "";
-      for (var i = 0; i < foods.length; i++) {
-        foodNames = foodNames + foods[i]["name"];
+
+      if (foods.length == 1){
+        foodNames = foodNames + foods[0]["name"];
+      } else {
+        foodNames = foodNames + foods[0]["name"];
+        for (var i = 1; i < foods.length; i++) {
+          foodNames = foodNames + ", " + foods[i]["name"];
+        }
       }
+
+
 
       nutriscore = calculateNutriScore(double.parse(totalCalories),
           double.parse(totalSugar), double.parse(totalFats),
@@ -311,7 +319,7 @@ class _ImageViewPageState extends State<ImageViewPage> {
 
       final response = await model
           .generateContent([Content.data('image/jpeg', image)]).timeout(
-              const Duration(seconds: 12));
+              const Duration(seconds: 20));
 
 
       setState(() async {
